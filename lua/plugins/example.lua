@@ -9,9 +9,9 @@ if true then return {} end
 -- * disable/enabled LazyVim plugins
 -- * override the configuration of LazyVim plugins
 return {
-  -- add gruvbox
   { "ellisonleao/gruvbox.nvim" },
-
+  -- add gruvbox
+  { "NLKNguyen/papercolor-theme" },
   {
     "rockyzhang24/arctic.nvim",
     dependencies = { "rktjmp/lush.nvim" },
@@ -19,7 +19,6 @@ return {
     branch = "main",
     priority = 1000,
   },
-
   {
     "catppuccin/nvim",
     name = "catppuccin",
@@ -104,11 +103,47 @@ return {
     "neovim/nvim-lspconfig",
     ---@class PluginLspOpts
     opts = {
-      ---@type lspconfig.options
+      pyflakes = {
+        enabled = true,
+        ignore = { "E501", "E231" },
+        maxLineLength = 120,
+      },
+      pycodestyle = {
+        enabled = true,
+        ignore = { "E501", "E231" },
+        maxLineLength = 120,
+      },
       servers = {
         -- pyright will be automatically installed with mason and loaded with lspconfig
         pyright = {},
+        ruff_lsp = {
+          keys = {
+            {
+              "<leader>co",
+              function()
+                vim.lsp.buf.code_action({
+                  apply = true,
+                  context = {
+                    only = { "source.organizeImports" },
+                    diagnostics = {},
+                  },
+                })
+              end,
+              desc = "Organize Imports",
+            },
+          },
+        },
       },
+    },
+    setup = {
+      ruff_lsp = function()
+        require("lazyvim.util").lsp.on_attach(function(client, _)
+          if client.name == "ruff_lsp" then
+            -- Disable hover in favor of Pyright
+            client.server_capabilities.hoverProvider = false
+          end
+        end)
+      end,
     },
   },
 
@@ -145,6 +180,67 @@ return {
         -- ["*"] = function(server, opts) end,
       },
     },
+  },
+
+  ---- code formatting
+
+  {
+    "mhartington/formatter.nvim",
+    config = function()
+      local formatter_prettier = { require("formatter.defaults.prettier") }
+      require("formatter").setup({
+        filetype = {
+          javascript = formatter_prettier,
+          javascriptreact = formatter_prettier,
+          typescript = formatter_prettier,
+          typescriptreact = formatter_prettier,
+        },
+      })
+      -- automatically format buffer before writing to disk:
+      vim.api.nvim_create_augroup("BufWritePreFormatter", {})
+      vim.api.nvim_create_autocmd("BufWritePre", {
+        command = "FormatWrite",
+        group = "BufWritePreFormatter",
+        pattern = { "*.js", "*.jsx", "*.ts", "*.tsx" },
+      })
+    end,
+    ft = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
+  },
+
+  ---- language server protocol (lsp)
+
+  {
+    -- use official lspconfig package (and enable completion):
+    "neovim/nvim-lspconfig",
+    dependencies = { "hrsh7th/cmp-nvim-lsp" },
+    config = function()
+      local lsp_capabilities = require("cmp_nvim_lsp").default_capabilities()
+      local lsp_on_attach = function(client, bufnr)
+        local bufopts = { noremap = true, silent = true, buffer = bufnr }
+        -- following keymap is based on both lspconfig and lsp-zero.nvim:
+        -- - https://github.com/neovim/nvim-lspconfig/blob/fd8f18fe819f1049d00de74817523f4823ba259a/README.md?plain=1#L79-L93
+        -- - https://github.com/VonHeikemen/lsp-zero.nvim/blob/18a5887631187f3f7c408ce545fd12b8aeceba06/lua/lsp-zero/server.lua#L285-L298
+        vim.keymap.set("n", "<C-k>", vim.lsp.buf.signature_help, bufopts)
+        vim.keymap.set("n", "K", vim.lsp.buf.hover, bufopts)
+        vim.keymap.set("n", "gD", vim.lsp.buf.declaration, bufopts)
+        vim.keymap.set("n", "gd", vim.lsp.buf.definition, bufopts)
+        vim.keymap.set("n", "gi", vim.lsp.buf.implementation, bufopts)
+        vim.keymap.set("n", "go", vim.lsp.buf.type_definition, bufopts)
+        vim.keymap.set("n", "gr", vim.lsp.buf.references, bufopts)
+        --m.keymap.set('n', TODO   , vim.lsp.buf.code_action                           , bufopts) -- lspconfig: <space>ca; lsp-zero: <F4>
+        --m.keymap.set('n', TODO   , function() vim.lsp.buf.format { async = true } end, bufopts) -- lspconfig: <space>f
+        --m.keymap.set('n', TODO   , vim.lsp.buf.rename                                , bufopts) -- lspconfig: <space>rn; lsp-zero: <F2>
+      end
+      local lspconfig = require("lspconfig")
+      -- enable both language-servers for both eslint and typescript:
+      for _, server in pairs({ "eslint", "tsserver" }) do
+        lspconfig[server].setup({
+          capabilities = lsp_capabilities,
+          on_attach = lsp_on_attach,
+        })
+      end
+    end,
+    ft = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
   },
 
   -- for typescript, LazyVim also includes extra specs to properly setup lspconfig,

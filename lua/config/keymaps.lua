@@ -24,6 +24,7 @@ keymap.set("n", "<leader>se", ":%s/\\<<C-r><C-w>\\>/<C-r><C-w>/g<Left><Left><Lef
 
 -- Delete a word bacwards
 keymap.set("n", "dw", "vb_d")
+keymap.set("n", "<leader>di", "va{:<Backspace>")
 
 -- Select all
 keymap.set("n", "<C-a>", "gg<S-v>G")
@@ -66,3 +67,6 @@ end
 keymap.set("n", "<leader>al", ":colorscheme catppuccin-latte<CR>")
 keymap.set("n", "<leader>an", ":colorscheme arctic<CR>")
 keymap.set("n", "<leader>ab", "<cmd>lua customizeHighlights()<CR>")
+keymap.set("n", "<leader>av", ":colorscheme catppuccin-macchiato<CR>")
+
+keymap.set("n", "<leader>j", "<cmd>execute '%!python -m json.tool' <CR>")

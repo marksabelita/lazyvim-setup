@@ -6,19 +6,19 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(vim.env.LAZY or lazypath)
 vim.opt.swapfile = false
-vim.filetype.add({
-  extension = {
-    templ = "templ",
-  },
-})
-local format_sync_grp = vim.api.nvim_create_augroup("GoImport", {})
-vim.api.nvim_create_autocmd("BufWritePre", {
-  pattern = "*.go",
-  callback = function()
-    require("go.format").goimport()
-  end,
-  group = format_sync_grp,
-})
+-- vim.filetype.add({
+--   extension = {
+--     templ = "templ",
+--   },
+-- })
+-- local format_sync_grp = vim.api.nvim_create_augroup("GoImport", {})
+-- vim.api.nvim_create_autocmd("BufWritePre", {
+--   pattern = "*.go",
+--   callback = function()
+--     require("go.format").goimport()
+--   end,
+--   group = format_sync_grp,
+-- })
 
 require("lazy").setup({
   spec = {
@@ -35,6 +35,7 @@ require("lazy").setup({
     { import = "lazyvim.plugins.extras.lang.json" },
     { import = "lazyvim.plugins.extras.ui.mini-animate" },
     { import = "lazyvim.plugins.extras.dap.core" },
+    { import = "lazyvim.plugins.extras.lang.go" },
     -- import/override with your plugins
     { import = "plugins" },
   },
